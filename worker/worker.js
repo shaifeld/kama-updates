@@ -52,11 +52,13 @@ async function trialUid(idToken) {
   return (j.users && j.users[0] && j.users[0].localId) || "";
 }
 
+const tfetch = (u, o = {}, ms = 25000) => { const c = new AbortController(); const t = setTimeout(() => c.abort(), ms); return fetch(u, { ...o, signal: c.signal }).finally(() => clearTimeout(t)); };
+
 async function pickModel(env) {
   if (env.MODEL) return env.MODEL;
   if (model) return model;
   try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${env.GEMINI_KEY}`);
+    const r = await tfetch(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${env.GEMINI_KEY}`, {}, 8000);
     const j = await r.json();
     const ok = (j.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent") && /flash/i.test(m.name) && !/lite|tts|image|live|audio|thinking|exp|preview/i.test(m.name));
     const v = n => { const m = n.match(/(\d+(?:\.\d+)?)/); return m ? +m[1] : 0; };
@@ -69,7 +71,15 @@ async function pickModel(env) {
 export default {
   async fetch(req, env) {
     if (req.method === "OPTIONS") return new Response(null, { headers: cors });
-    if (req.method !== "POST") return json({ ok: true, service: "kama-ai" });
+    if (req.method !== "POST") {
+      if (new URL(req.url).searchParams.has("diag") && env.GEMINI_KEY) {
+        const t0 = Date.now(); let m = "", st = 0, err = "";
+        try { m = await pickModel(env); const r = await tfetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${env.GEMINI_KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "say ok" }] }] }) }, 20000); st = r.status; if (st !== 200) err = (await r.text()).slice(0, 300); }
+        catch (e) { err = String(e).slice(0, 200); }
+        return json({ model: m, status: st, ms: Date.now() - t0, err });
+      }
+      return json({ ok: true, service: "kama-ai" });
+    }
     if (!env.GEMINI_KEY) return json({ error: "server not configured" }, 500);
     const len = +req.headers.get("content-length") || 0;
     if (len > MAX_BODY) return json({ error: "too big" }, 413);
@@ -91,10 +101,11 @@ export default {
     if (n > lim) return json({ error: "daily limit" }, 429);
     if (!Array.isArray(body.contents)) return json({ error: "no contents" }, 400);
     const m = await pickModel(env);
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${env.GEMINI_KEY}`, {
+    let r;
+    try { r = await tfetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${env.GEMINI_KEY}`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contents: body.contents, generationConfig: body.generationConfig || {}, systemInstruction: body.systemInstruction }),
-    });
+    }, 80000); } catch (e) { return json({ error: "ai timeout" }, 504); }
     const text = await r.text();
     if (r.status === 404) model = null;
     return new Response(text, { status: r.status, headers: { "Content-Type": "application/json; charset=utf-8", ...cors } });
