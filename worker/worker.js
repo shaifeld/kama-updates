@@ -7,7 +7,9 @@
 const FB_KEY = "AIzaSyAdljoZOi3pmXquXYxQGZ68MWiKLgu310M";
 const FB_PROJECT = "kama-ani-ashir";
 const MAX_BODY = 6_000_000;
-const DAY_LIMIT = 60; // requests per code per day (per worker instance, best effort)
+const DAY_LIMIT = 60;    // requests per code per day (per worker instance, best effort)
+const TRIAL_LIMIT = 15;  // per trial user (no code yet) per day
+const TRIAL_TOTAL = 400; // all trial users together per day
 
 let fbTok = null, fbExp = 0, model = null;
 const okCodes = new Map();   // code -> time verified
@@ -42,6 +44,14 @@ async function codeActive(code) {
   return true;
 }
 
+async function trialUid(idToken) {
+  if (!idToken || idToken.length > 4000) return "";
+  const r = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FB_KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idToken }) });
+  if (r.status !== 200) return "";
+  const j = await r.json();
+  return (j.users && j.users[0] && j.users[0].localId) || "";
+}
+
 async function pickModel(env) {
   if (env.MODEL) return env.MODEL;
   if (model) return model;
@@ -66,10 +76,19 @@ export default {
     let body;
     try { body = await req.json(); } catch (e) { return json({ error: "bad json" }, 400); }
     const code = String(body.lic || "").toUpperCase();
-    if (!(await codeActive(code))) return json({ error: "no active code" }, 403);
-    const day = new Date().toISOString().slice(0, 10), k = code + "|" + day;
+    const day = new Date().toISOString().slice(0, 10);
+    let k, lim;
+    if (await codeActive(code)) { k = code + "|" + day; lim = DAY_LIMIT; }
+    else {
+      // trial: a signed-in app user without a code yet (verified with Firebase)
+      const uid = await trialUid(String(body.tok || ""));
+      if (!uid) return json({ error: "no active code" }, 403);
+      const t = "trial|" + day, tn = (counts.get(t) || 0) + 1; counts.set(t, tn);
+      if (tn > TRIAL_TOTAL) return json({ error: "daily limit" }, 429);
+      k = uid + "|" + day; lim = TRIAL_LIMIT;
+    }
     const n = (counts.get(k) || 0) + 1; counts.set(k, n);
-    if (n > DAY_LIMIT) return json({ error: "daily limit" }, 429);
+    if (n > lim) return json({ error: "daily limit" }, 429);
     if (!Array.isArray(body.contents)) return json({ error: "no contents" }, 400);
     const m = await pickModel(env);
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${env.GEMINI_KEY}`, {
