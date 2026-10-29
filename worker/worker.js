@@ -79,10 +79,10 @@ async function generate(env, payload) {
   for (let i = 0; i < tries.length; i++) {
     const m = tries[i];
     try {
-      const r = await tfetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${env.GEMINI_KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }, i === 0 ? 30000 : 18000);
+      const r = await tfetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${env.GEMINI_KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }, i === 0 ? 20000 : 15000);
       if (r.status === 200 || r.status === 400) return r;
       last = r; bad.set(m, Date.now() + 10 * 60e3);
-    } catch (e) { bad.set(m, Date.now() + 10 * 60e3); }
+    } catch (e) { bad.set(m, Date.now() + 6 * 3600e3); } // hung: skip for hours
   }
   return last || json({ error: "ai unavailable" }, 503);
 }
