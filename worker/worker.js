@@ -70,6 +70,9 @@ async function modelList(env) {
   const v = n => { const m = n.match(/(\d+(?:\.\d+)?)/); return m ? +m[1] : 0; };
   // full models first (newest first), then lite; "latest" aliases after numbered ones
   names.sort((a, b) => (/lite/.test(a) - /lite/.test(b)) || (v(b) - v(a)));
+  // models that answered fast in testing go first; brand-new ones often hang on the free tier
+  const FAST = ["gemini-3-flash-preview", "gemini-2.5-flash", "gemini-flash-latest", "gemini-3.1-flash-lite-preview", "gemini-flash-lite-latest"];
+  names = [...FAST.filter(m => names.includes(m)), ...names.filter(m => !FAST.includes(m))];
   if (!names.length) names = ["gemini-3-flash-preview", "gemini-flash-latest", "gemini-2.5-flash", "gemini-flash-lite-latest"];
   models = names; modelsAt = Date.now();
   return models;
@@ -81,7 +84,7 @@ async function generate(env, payload) {
   for (let i = 0; i < tries.length; i++) {
     const m = tries[i];
     try {
-      const r = await tfetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${env.GEMINI_KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }, i === 0 ? 20000 : 15000);
+      const r = await tfetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${env.GEMINI_KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }, i === 0 ? 25000 : 12000);
       if (r.status === 200 || r.status === 400) return r;
       last = r; bad.set(m, Date.now() + 10 * 60e3);
     } catch (e) { bad.set(m, Date.now() + 6 * 3600e3); } // hung: skip for hours
