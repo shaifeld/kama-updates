@@ -11,7 +11,7 @@ const DAY_LIMIT = 60;    // requests per code per day (per worker instance, best
 const TRIAL_LIMIT = 15;  // per trial user (no code yet) per day
 const TRIAL_TOTAL = 400; // all trial users together per day
 
-let fbTok = null, fbExp = 0, model = null;
+let fbTok = null, fbExp = 0;
 const okCodes = new Map();   // code -> time verified
 const counts = new Map();    // code|day -> n
 
@@ -54,18 +54,37 @@ async function trialUid(idToken) {
 
 const tfetch = (u, o = {}, ms = 25000) => { const c = new AbortController(); const t = setTimeout(() => c.abort(), ms); return fetch(u, { ...o, signal: c.signal }).finally(() => clearTimeout(t)); };
 
-async function pickModel(env) {
-  if (env.MODEL) return env.MODEL;
-  if (model) return model;
+let models = null, modelsAt = 0;
+const bad = new Map(); // model -> until
+async function modelList(env) {
+  if (env.MODEL) return [env.MODEL];
+  if (models && Date.now() - modelsAt < 6 * 3600e3) return models;
+  let names = [];
   try {
     const r = await tfetch(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${env.GEMINI_KEY}`, {}, 8000);
     const j = await r.json();
-    const ok = (j.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent") && /flash/i.test(m.name) && !/lite|tts|image|live|audio|thinking|exp|preview/i.test(m.name));
-    const v = n => { const m = n.match(/(\d+(?:\.\d+)?)/); return m ? +m[1] : 0; };
-    ok.sort((a, b) => v(b.name) - v(a.name));
-    model = (ok[0] && ok[0].name.replace("models/", "")) || "gemini-2.5-flash";
-  } catch (e) { model = "gemini-2.5-flash"; }
-  return model;
+    names = (j.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent") && /flash/i.test(m.name) && !/tts|image|live|audio|thinking|exp/i.test(m.name)).map(m => m.name.replace("models/", ""));
+  } catch (e) {}
+  const v = n => { const m = n.match(/(\d+(?:\.\d+)?)/); return m ? +m[1] : 0; };
+  // full models first (newest first), then lite; "latest" aliases after numbered ones
+  names.sort((a, b) => (/lite/.test(a) - /lite/.test(b)) || (v(b) - v(a)));
+  if (!names.length) names = ["gemini-3-flash-preview", "gemini-flash-latest", "gemini-2.5-flash", "gemini-flash-lite-latest"];
+  models = names; modelsAt = Date.now();
+  return models;
+}
+async function generate(env, payload) {
+  const list = (await modelList(env)).filter(m => !(bad.get(m) > Date.now()));
+  const tries = (list.length ? list : await modelList(env)).slice(0, 4);
+  let last = null;
+  for (let i = 0; i < tries.length; i++) {
+    const m = tries[i];
+    try {
+      const r = await tfetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${env.GEMINI_KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }, i === 0 ? 30000 : 18000);
+      if (r.status === 200 || r.status === 400) return r;
+      last = r; bad.set(m, Date.now() + 10 * 60e3);
+    } catch (e) { bad.set(m, Date.now() + 10 * 60e3); }
+  }
+  return last || json({ error: "ai unavailable" }, 503);
 }
 
 export default {
@@ -73,18 +92,9 @@ export default {
     if (req.method === "OPTIONS") return new Response(null, { headers: cors });
     if (req.method !== "POST") {
       if (new URL(req.url).searchParams.has("diag") && env.GEMINI_KEY) {
-        const out = [];
-        try {
-          const lr = await tfetch(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${env.GEMINI_KEY}`, {}, 8000);
-          const lj = await lr.json();
-          const names = (lj.models || []).filter(x => (x.supportedGenerationMethods || []).includes("generateContent") && /flash/i.test(x.name)).map(x => x.name.replace("models/", "")).slice(0, 12);
-          for (const m of names) {
-            const t0 = Date.now(); let st = 0, err = "";
-            try { const r = await tfetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${env.GEMINI_KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "say ok" }] }] }) }, 9000); st = r.status; if (st !== 200) err = (await r.text()).slice(0, 120); } catch (e) { err = "timeout"; }
-            out.push({ m, st, ms: Date.now() - t0, err });
-          }
-        } catch (e) { out.push({ err: String(e).slice(0, 200) }); }
-        return json(out);
+        const t0 = Date.now(); const order = await modelList(env);
+        const r = await generate(env, { contents: [{ role: "user", parts: [{ text: "say ok" }] }] });
+        return json({ order, status: r.status, ms: Date.now() - t0, bad: [...bad.keys()] });
       }
       return json({ ok: true, service: "kama-ai" });
     }
@@ -108,14 +118,8 @@ export default {
     const n = (counts.get(k) || 0) + 1; counts.set(k, n);
     if (n > lim) return json({ error: "daily limit" }, 429);
     if (!Array.isArray(body.contents)) return json({ error: "no contents" }, 400);
-    const m = await pickModel(env);
-    let r;
-    try { r = await tfetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${env.GEMINI_KEY}`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: body.contents, generationConfig: body.generationConfig || {}, systemInstruction: body.systemInstruction }),
-    }, 80000); } catch (e) { return json({ error: "ai timeout" }, 504); }
+    const r = await generate(env, { contents: body.contents, generationConfig: body.generationConfig || {}, systemInstruction: body.systemInstruction });
     const text = await r.text();
-    if (r.status === 404) model = null;
     return new Response(text, { status: r.status, headers: { "Content-Type": "application/json; charset=utf-8", ...cors } });
   },
 };
