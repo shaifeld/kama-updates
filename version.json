@@ -1,16 +1,21 @@
 {
- "code": 57,
- "ver": "6.13",
- "apk": "https://raw.githubusercontent.com/shaifeld/kama-updates/main/kama-6.13.apk",
- "sha": "63249e57828b320bb50206dfd800caa4c136445a91f353c4b8899c075e852417",
+ "code": 58,
+ "ver": "6.14",
+ "apk": "https://raw.githubusercontent.com/shaifeld/kama-updates/main/kama-6.14.apk",
+ "sha": "34597af1fd718df4a3ffaedd081b2fa03b29be14722e970659424ff10f470100",
  "notes": [
-  "תיקון: מסך שנפתח מהתפריט מופיע עכשיו מעל התפריט ולא מאחוריו",
-  "זו הגרסה הראשונה שמגיעה דרך העדכון האוטומטי"
+  "החזר או זיכוי: מסמנים בהוספה, והסכום יורד מההוצאות",
+  "תשלומים: קנייה בכמה תשלומים נרשמת לבד בכל חודש",
+  "ממתין לאימות: מה שנכנס לבד מהודעות, התראות או מהשעון מסומן, ומאשרים בלחיצה או הכל ביחד",
+  "לשאול את היועץ: בתפריט, שאלה על הכסף שלך לפי עקרונות הספר (נפתח כשהשרת יעלה)",
+  "קריאת צילומי מסך בלי שום הגדרה (נפתח כשהשרת יעלה)",
+  "מדיניות הפרטיות עודכנה, וצריך לאשר אותה שוב",
+  "תיקון: כפתור פתיחת Firebase באפליקציית הניהול"
  ],
  "lab": {
-  "code": 57,
-  "ver": "6.13",
-  "apk": "https://raw.githubusercontent.com/shaifeld/kama-updates/main/kama-admin-6.13.apk",
-  "sha": "551603608e0c920fc6dace1eff44848a8fbbde3b9ea31b1a187a55b967ca165a"
+  "code": 58,
+  "ver": "6.14",
+  "apk": "https://raw.githubusercontent.com/shaifeld/kama-updates/main/kama-admin-6.14.apk",
+  "sha": "c63d64a5acad225e70c7f0e7fe9035a16d7c6ec3c625b80bfadf5dd213599292"
  }
 }
