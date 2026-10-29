@@ -73,10 +73,18 @@ export default {
     if (req.method === "OPTIONS") return new Response(null, { headers: cors });
     if (req.method !== "POST") {
       if (new URL(req.url).searchParams.has("diag") && env.GEMINI_KEY) {
-        const t0 = Date.now(); let m = "", st = 0, err = "";
-        try { m = await pickModel(env); const r = await tfetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${env.GEMINI_KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "say ok" }] }] }) }, 20000); st = r.status; if (st !== 200) err = (await r.text()).slice(0, 300); }
-        catch (e) { err = String(e).slice(0, 200); }
-        return json({ model: m, status: st, ms: Date.now() - t0, err });
+        const out = [];
+        try {
+          const lr = await tfetch(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${env.GEMINI_KEY}`, {}, 8000);
+          const lj = await lr.json();
+          const names = (lj.models || []).filter(x => (x.supportedGenerationMethods || []).includes("generateContent") && /flash/i.test(x.name)).map(x => x.name.replace("models/", "")).slice(0, 12);
+          for (const m of names) {
+            const t0 = Date.now(); let st = 0, err = "";
+            try { const r = await tfetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${env.GEMINI_KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "say ok" }] }] }) }, 9000); st = r.status; if (st !== 200) err = (await r.text()).slice(0, 120); } catch (e) { err = "timeout"; }
+            out.push({ m, st, ms: Date.now() - t0, err });
+          }
+        } catch (e) { out.push({ err: String(e).slice(0, 200) }); }
+        return json(out);
       }
       return json({ ok: true, service: "kama-ai" });
     }
