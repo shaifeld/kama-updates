@@ -1,19 +1,19 @@
 {
- "code": 65,
- "ver": "6.21",
- "apk": "https://raw.githubusercontent.com/shaifeld/kama-updates/main/kama-6.21.apk",
- "sha": "4a3f58e40321b7143d6456092ce0c2052f71a19e5c2dc99ae0a608ccce53aa61",
+ "code": 66,
+ "ver": "6.22",
+ "apk": "https://raw.githubusercontent.com/shaifeld/kama-updates/main/kama-6.22.apk",
+ "sha": "1efbc07d090e533a8251cd805521483c397a867e1c789795fbf6dc023e5020c9",
  "notes": [
-  "קובץ התזרים מרייזאפ נקרא אוטומטית: הוספה ← אקסל. עובד גם באייפון",
-  "מקורות הכנסה: שם, סכום ויום בחודש לכל מקור, וכרטיס \"צפוי להיכנס עוד החודש\"",
-  "הלוואה שנכנסת לחשבון לא נספרת יותר כהכנסה",
-  "החיבור לרייזאפ נמצא גם באשף, ומושך חצי שנה אחורה",
-  "יתרה עדכנית מהודעת הבנק לא נדרסת ביתרה ישנה מרייזאפ"
+  "תצוגה נקייה: במסך הבית מספר אחד, כמה נשאר להוציא השבוע. כל השאר בלחיצה על \"להציג את כל הפרטים\"",
+  "ההסברים מוסתרים, ובכל כרטיס יש כפתור \"? הסבר\" שפותח אותם",
+  "יעד חודשי לשים בצד",
+  "מינוס בעו״ש נספר עכשיו בחובות ולא בכסף הנזיל",
+  "אפשר לבחור את קובץ התזרים מרייזאפ גם כשהטלפון לא מזהה אותו כאקסל"
  ],
  "lab": {
-  "code": 65,
-  "ver": "6.21",
-  "apk": "https://raw.githubusercontent.com/shaifeld/kama-updates/main/kama-admin-6.21.apk",
-  "sha": "240d0dabef715ec86e72c9bd94d844f19aa69a385bfc5f715b0b4cd98a5f868f"
+  "code": 66,
+  "ver": "6.22",
+  "apk": "https://raw.githubusercontent.com/shaifeld/kama-updates/main/kama-admin-6.22.apk",
+  "sha": "bd78adb15c29830f5e400085b9aef5df6c4158e085a5cdb5e3711232cea71f1b"
  }
 }
