@@ -1,18 +1,19 @@
 {
- "code": 64,
- "ver": "6.20",
- "apk": "https://raw.githubusercontent.com/shaifeld/kama-updates/main/kama-6.20.apk",
- "sha": "0d6680629d0c4acc1babcfc8af36b996c8879cdcdc618468950dd403b59d455a",
+ "code": 65,
+ "ver": "6.21",
+ "apk": "https://raw.githubusercontent.com/shaifeld/kama-updates/main/kama-6.21.apk",
+ "sha": "4a3f58e40321b7143d6456092ce0c2052f71a19e5c2dc99ae0a608ccce53aa61",
  "notes": [
-  "חיבור לרייזאפ: מי שיש לו מנוי מדביק טוקן פעם בחודש, והתנועות מכל הבנקים והכרטיסים נכנסות לבד",
-  "העברות בביט ופייבוקס מגיעות עם שם הנמען וההערה",
-  "יתרות הבנק מתעדכנות מרייזאפ, משכנתא נכנסת למאזן, והשוואה ללקוחות דומים",
-  "סדר הקטגוריות לבחירתך: חצים למעלה ולמטה בעריכת הקטגוריות"
+  "קובץ התזרים מרייזאפ נקרא אוטומטית: הוספה ← אקסל. עובד גם באייפון",
+  "מקורות הכנסה: שם, סכום ויום בחודש לכל מקור, וכרטיס \"צפוי להיכנס עוד החודש\"",
+  "הלוואה שנכנסת לחשבון לא נספרת יותר כהכנסה",
+  "החיבור לרייזאפ נמצא גם באשף, ומושך חצי שנה אחורה",
+  "יתרה עדכנית מהודעת הבנק לא נדרסת ביתרה ישנה מרייזאפ"
  ],
  "lab": {
-  "code": 64,
-  "ver": "6.20",
-  "apk": "https://raw.githubusercontent.com/shaifeld/kama-updates/main/kama-admin-6.20.apk",
-  "sha": "2828ad879754dca0e52eaad31935c108eddf7bf611a6d04bd1d95fb5861bbbc2"
+  "code": 65,
+  "ver": "6.21",
+  "apk": "https://raw.githubusercontent.com/shaifeld/kama-updates/main/kama-admin-6.21.apk",
+  "sha": "240d0dabef715ec86e72c9bd94d844f19aa69a385bfc5f715b0b4cd98a5f868f"
  }
 }
