@@ -99,7 +99,8 @@ export default {
       if (new URL(req.url).searchParams.has("diag") && env.GEMINI_KEY) {
         const t0 = Date.now(); const order = await modelList(env);
         const r = await generate(env, { contents: [{ role: "user", parts: [{ text: "say ok" }] }] });
-        return json({ order, status: r.status, ms: Date.now() - t0, bad: [...bad.keys()] });
+        let msg = ""; if (r.status !== 200) { try { const j = await r.json(); msg = String((j.error && (j.error.status + ": " + j.error.message)) || "").slice(0, 160); } catch (e) {} }
+        return json({ order, status: r.status, msg, ms: Date.now() - t0, bad: [...bad.keys()] });
       }
       return json({ ok: true, service: "kama-ai" });
     }
