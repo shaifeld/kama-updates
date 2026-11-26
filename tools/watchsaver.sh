@@ -25,7 +25,8 @@ echo "$B" | grep -qE '(AC|USB|Wireless) powered: true' && CH=1 || CH=0
 FC=$HOME/.watch_off_charge
 if [ "$CH" = 1 ]; then
   # בטעינה: השעון מנותק, כדי שלא יתחבר ויתנתק כשמתרחקים מהטלפון
-  [ -f "$F" ] || { rish -c "pm disable-user --user 0 $P" >/dev/null 2>&1 && touch "$F" "$FC"; }
+  [ -f "$F" ] || { rish -c "pm disable-user --user 0 $P" >/dev/null 2>&1 && touch "$F"; }
+  [ -f "$F" ] && touch "$FC"
 elif [ "$L" -lt 30 ] && [ ! -f "$F" ]; then
   rish -c "pm disable-user --user 0 $P" >/dev/null 2>&1 && touch "$F" && note 'השעון נותק' "הסוללה ב-$L אחוז. יתחבר לבד מעל 40"
 elif [ -f "$F" ] && { [ "$L" -ge 40 ] || { [ -f "$FC" ] && [ "$L" -ge 30 ]; }; }; then
