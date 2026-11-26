@@ -77,14 +77,21 @@ async function modelList(env) {
   models = names; modelsAt = Date.now();
   return models;
 }
-async function generate(env, payload) {
+function fastCfg(m, payload) {
+  // chat answers: little or no hidden "thinking", so the reply starts fast
+  const tc = /gemini-3/.test(m) ? { thinkingLevel: "low" } : /2\.5-flash/.test(m) ? { thinkingBudget: 0 } : null;
+  if (!tc) return payload;
+  return { ...payload, generationConfig: { ...(payload.generationConfig || {}), thinkingConfig: tc } };
+}
+async function generate(env, payload, fast) {
   const list = (await modelList(env)).filter(m => !(bad.get(m) > Date.now()));
   const tries = (list.length ? list : await modelList(env)).slice(0, 4);
   let last = null;
   for (let i = 0; i < tries.length; i++) {
     const m = tries[i];
     try {
-      const r = await tfetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${env.GEMINI_KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }, i === 0 ? 25000 : 12000);
+      const r = await tfetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${env.GEMINI_KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(fast ? fastCfg(m, payload) : payload) }, i === 0 ? 25000 : 12000);
+      if (r.status === 400 && fast) { const r2 = await tfetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${env.GEMINI_KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }, 12000); if (r2.status === 200 || r2.status === 400) return r2; }
       if (r.status === 200 || r.status === 400) return r;
       last = r; bad.set(m, Date.now() + 10 * 60e3);
     } catch (e) { bad.set(m, Date.now() + 6 * 3600e3); } // hung: skip for hours
@@ -98,7 +105,8 @@ export default {
     if (req.method !== "POST") {
       if (new URL(req.url).searchParams.has("diag") && env.GEMINI_KEY) {
         const t0 = Date.now(); const order = await modelList(env);
-        const r = await generate(env, { contents: [{ role: "user", parts: [{ text: "say ok" }] }] });
+        const u = new URL(req.url), lg = u.searchParams.has("long"), fs = u.searchParams.has("fast");
+        const r = await generate(env, { contents: [{ role: "user", parts: [{ text: lg ? "תסביר בעברית ב-6 שורות איך לבנות קרן חירום כשההוצאות גבוהות מההכנסות" : "say ok" }] }] }, fs);
         let msg = ""; if (r.status !== 200) { try { const j = await r.json(); msg = String((j.error && (j.error.status + ": " + j.error.message)) || "").slice(0, 160); } catch (e) {} }
         return json({ order, status: r.status, msg, ms: Date.now() - t0, bad: [...bad.keys()] });
       }
@@ -136,7 +144,7 @@ export default {
       sys = { parts: [{ text: CHAT_GUARD + "\n" + own.slice(0, 6000) }] };
       gen = { ...gen, maxOutputTokens: Math.min(+gen.maxOutputTokens || 1500, 1500) };
     }
-    const r = await generate(env, { contents: body.contents, generationConfig: gen, systemInstruction: sys });
+    const r = await generate(env, { contents: body.contents, generationConfig: gen, systemInstruction: sys }, kind === "chat");
     let text = await r.text();
     if (r.status === 200) { try { const j = JSON.parse(text); j.kamaLeft = Math.max(0, L.chat - nc); text = JSON.stringify(j); } catch (e) {} }
     return new Response(text, { status: r.status, headers: { "Content-Type": "application/json; charset=utf-8", ...cors } });
