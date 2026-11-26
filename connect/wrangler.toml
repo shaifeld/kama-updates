@@ -1,6 +1,8 @@
 name = "kama-connect"
 main = "worker.js"
 compatibility_date = "2026-10-01"
+workers_dev = true
+preview_urls = false
 
 [vars]
 GITHUB_CLIENT_ID = "Ov23ligHnhIY5sGAZph6"
