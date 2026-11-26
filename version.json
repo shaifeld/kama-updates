@@ -1,18 +1,17 @@
 {
- "code": 67,
- "ver": "6.23",
- "apk": "https://raw.githubusercontent.com/shaifeld/kama-updates/main/kama-6.23.apk",
- "sha": "50e208922f0c41d7757c4644c5ec4a9748c2381fa0778f4e8693fb2bb9e2d349",
+ "code": 68,
+ "ver": "6.24",
+ "apk": "https://raw.githubusercontent.com/shaifeld/kama-updates/main/kama-6.24.apk",
+ "sha": "73564ab9146ceaec7ebb0fe229c6d8b42291358c4d99e8340250d021b049ea9a",
  "notes": [
-  "תוקן: קובץ התזרים מרייזאפ נקרא גם כשהטלפון שולח אותו בלי סיומת",
-  "בחירת קטגוריה חדשה: קודם הנפוצות, השאר ב\"עוד קטגוריות\", ומשם אפשר להוסיף קטגוריה או לערוך",
-  "בעריכת קטגוריות אפשר לשנות גם את המשמעות: לאן נספרת ואם היא קבועה",
-  "התצוגה הנקייה בכל האפליקציה: ההסברים הארוכים נפתחים בכפתור \"? הסבר\" בכל מסך"
+  "פתיחה מהירה יותר: פחות ציורים מחדש של המסך בעלייה",
+  "תנועות מהבנק נכנסות לבד עם הקטגוריה הכי סבירה, בלי לקפוץ למסך אישור. אפשר לשנות כל תנועה מתי שרוצים",
+  "אפשר לחזור לאישור ידני: מקורות נתונים ← תנועות מהבנק"
  ],
  "lab": {
-  "code": 67,
-  "ver": "6.23",
-  "apk": "https://raw.githubusercontent.com/shaifeld/kama-updates/main/kama-admin-6.23.apk",
-  "sha": "b010c01a925c1854282ab75478d22dfa8d09b0f801122747827c51a5492ec50e"
+  "code": 68,
+  "ver": "6.24",
+  "apk": "https://raw.githubusercontent.com/shaifeld/kama-updates/main/kama-admin-6.24.apk",
+  "sha": "0697c71434549499756b5c3edb3fa25c9eb4a2576ec201ef77ff149ac3fcac22"
  }
 }
